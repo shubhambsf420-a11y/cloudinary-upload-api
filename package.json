@@ -1,14 +1,13 @@
 {
   "name": "cloudinary-upload-api",
   "version": "1.0.0",
-  "license": "MIT",
   "private": true,
-  "dependencies": {
-    "cloudinary": "^1.37.2"
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
   },
-  "devDependencies": {
-    "@types/node": "^20.5.6",
-    "@vercel/node": "^2.9.6",
-    "typescript": "^4.7.3"
+  "dependencies": {
+    "formidable": "^3.5.0",
+    "cloudinary": "^1.37.2"
   }
 }

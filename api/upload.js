@@ -9,9 +9,10 @@ export const config = {
   },
 };
 
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,      
+  api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
@@ -20,19 +21,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = new formidable.IncomingForm();
+  const form = formidable({ multiples: false, keepExtensions: true });
 
   form.parse(req, async (err, fields, files) => {
-    if (err) return res.status(500).json({ error: "Form parsing error" });
+    if (err) {
+      console.error("Form parse error:", err);
+      return res.status(500).json({ error: "Form parsing error" });
+    }
 
-    const file = files.file?.[0];
+    const file = files.file;
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     try {
-      const publicId = fields.public_id?.[0];
+      const publicId = fields.public_id;
 
       // Delete old image if public_id provided
       if (publicId) {
@@ -40,15 +44,15 @@ export default async function handler(req, res) {
       }
 
       const result = await cloudinary.uploader.upload(file.filepath, {
-        folder: "profile_pics", // optional: organize uploads
+        folder: "profile_pics",
       });
 
       return res.status(200).json({
         url: result.secure_url,
         public_id: result.public_id,
       });
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Upload error:", error);
       return res.status(500).json({ error: "Upload failed" });
     }
   });

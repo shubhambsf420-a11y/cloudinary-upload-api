@@ -10,9 +10,9 @@ export const config = {
 };
 
 cloudinary.config({
-  cloud_name: process.env.dgqky5ees,
-  api_key: process.env.233859675136666,
-  api_secret: process.env.sF69Wr6GfMEN6Dv4YVBlmin1xFQ,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,      
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export default async function handler(req, res) {

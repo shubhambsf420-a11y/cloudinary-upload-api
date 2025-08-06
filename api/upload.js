@@ -2,14 +2,12 @@
 import formidable from "formidable";
 import { v2 as cloudinary } from "cloudinary";
 
-// Prevent Vercel from parsing the request body
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -21,24 +19,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = formidable({ multiples: false, keepExtensions: true });
+  const form = formidable({ multiples: false });
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error("Form parse error:", err);
+      console.error("Form parsing error:", err);
       return res.status(500).json({ error: "Form parsing error" });
     }
 
     const file = files.file;
+    const publicId = fields.public_id;
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     try {
-      const publicId = fields.public_id;
-
-      // Delete old image if public_id provided
       if (publicId) {
         await cloudinary.uploader.destroy(publicId);
       }
@@ -51,8 +47,8 @@ export default async function handler(req, res) {
         url: result.secure_url,
         public_id: result.public_id,
       });
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (err) {
+      console.error("Upload error:", err);
       return res.status(500).json({ error: "Upload failed" });
     }
   });

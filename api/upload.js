@@ -4,14 +4,14 @@ import formidable from "formidable";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
-// Disable default body parsing by Vercel
+// Disable Vercel’s default body parser
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Cloudinary config
+// Cloudinary config using env vars
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -20,38 +20,31 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const form = formidable({
-    multiples: false,
-    keepExtensions: true,
-  });
+  const form = new formidable.IncomingForm({ keepExtensions: true });
 
-  try {
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error("Formidable error:", err);
-        return res.status(500).json({ error: "Form parsing error" });
-      }
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error("Form parse error:", err);
+      return res.status(500).json({ error: "Form parsing error" });
+    }
 
-      const file = files.file;
+    const file = files.file;
+    if (!file || !file.path) {
+      return res.status(400).json({ error: "Missing file" });
+    }
+
+    try {
       const publicId = fields.public_id;
 
-      if (!file || !file.filepath) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      // Optionally delete old image
+      // Delete previous image if public_id is passed
       if (publicId) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (deleteError) {
-          console.warn("Cloudinary delete failed:", deleteError.message);
-        }
+        await cloudinary.uploader.destroy(publicId);
       }
 
-      const result = await cloudinary.uploader.upload(file.filepath, {
+      const result = await cloudinary.uploader.upload(file.path, {
         folder: "profile_pics",
       });
 
@@ -59,9 +52,9 @@ export default async function handler(req, res) {
         url: result.secure_url,
         public_id: result.public_id,
       });
-    });
-  } catch (e) {
-    console.error("Upload error:", e);
-    return res.status(500).json({ error: "Upload failed" });
-  }
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
+      return res.status(500).json({ error: "Upload failed" });
+    }
+  });
 }

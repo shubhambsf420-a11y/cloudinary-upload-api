@@ -46,6 +46,7 @@ export default async function handler(req, res) {
 
       const result = await cloudinary.uploader.upload(file.filepath, {
         folder: 'profile_pics',
+        format: 'webp', // ✅ Convert to WebP
       });
 
       return res.status(200).json({

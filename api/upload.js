@@ -1,17 +1,16 @@
 // api/upload.js
+import { IncomingForm } from 'formidable';
+import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
 
-import formidable from "formidable";
-import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
-
-// Disable Vercel’s default body parser
+// Disable Next.js default body parsing
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Cloudinary config using env vars
+// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,33 +18,34 @@ cloudinary.config({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const form = new formidable.IncomingForm({ keepExtensions: true });
+  const form = new IncomingForm({ multiples: false, keepExtensions: true });
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error("Form parse error:", err);
-      return res.status(500).json({ error: "Form parsing error" });
+      console.error('Form parsing error:', err);
+      return res.status(500).json({ error: 'Form parsing error' });
     }
 
     const file = files.file;
-    if (!file || !file.path) {
-      return res.status(400).json({ error: "Missing file" });
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
     try {
       const publicId = fields.public_id;
 
-      // Delete previous image if public_id is passed
+      // Delete old image if publicId is provided
       if (publicId) {
         await cloudinary.uploader.destroy(publicId);
       }
 
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder: "profile_pics",
+      const result = await cloudinary.uploader.upload(file.filepath, {
+        folder: 'profile_pics',
       });
 
       return res.status(200).json({
@@ -53,8 +53,8 @@ export default async function handler(req, res) {
         public_id: result.public_id,
       });
     } catch (err) {
-      console.error("Cloudinary upload error:", err);
-      return res.status(500).json({ error: "Upload failed" });
+      console.error('Upload error:', err);
+      return res.status(500).json({ error: 'Upload failed' });
     }
   });
 }
